@@ -131,16 +131,16 @@ int RTIMUBNO055::IMUGetPollInterval()
 
 bool RTIMUBNO055::IMURead()
 {
-    unsigned char buffer[24];
+    unsigned char buffer[32];
 
     if ((RTMath::currentUSecsSinceEpoch() - m_lastReadTime) < m_sampleInterval)
         return false;                                       // too soon
 
     m_lastReadTime = RTMath::currentUSecsSinceEpoch();
-    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 24, buffer, "Failed to read BNO055 data"))
+    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 32, buffer, "Failed to read BNO055 data"))
         return false;
 
-    int16_t x, y, z;
+    int16_t w, x, y, z;
 
     // process accel data
 
@@ -184,6 +184,16 @@ bool RTIMUBNO055::IMURead()
     m_imuData.fusionPose.setY((RTFLOAT)z / 900.0);
     m_imuData.fusionPose.setZ((RTFLOAT)x / 900.0);
 
+    w = (((uint16_t)buffer[25]) << 8) | ((uint16_t)buffer[24]);
+    x = (((uint16_t)buffer[27]) << 8) | ((uint16_t)buffer[26]);
+    y = (((uint16_t)buffer[29]) << 8) | ((uint16_t)buffer[28]);
+    z = (((uint16_t)buffer[31]) << 8) | ((uint16_t)buffer[30]);
+    
+
+    //m_imuData.fusionQPose.setScalar(w);
+    //m_imuData.fusionQPose.setX(x);
+    //m_imuData.fusionQPose.setY(y);
+    //m_imuData.fusionQPose.setZ(z);
     m_imuData.fusionQPose.fromEuler(m_imuData.fusionPose);
 
     m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();
